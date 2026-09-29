@@ -7,6 +7,10 @@ Le moteur d'aiguille **n'est pas un moteur pas à pas** : c'est une jauge **air-
 L'aiguille s'aligne sur le champ des deux bobines : pour un angle θ, on envoie
 un courant ∝ cos θ dans la bobine C et ∝ sin θ dans la bobine S.
 
+## Démo
+
+[▶ Voir la vidéo de l'aiguille en fonctionnement](compteur.mp4)
+
 ## Câblage
 
 | Jauge | Uno |
