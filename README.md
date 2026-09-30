@@ -1,3 +1,6 @@
+
+
+
 # Jauge de compteur Mazda CB87 — Arduino Uno
 
 Pilotage d'une aiguille de compteur voi directement par un Arduino Uno.
@@ -9,7 +12,7 @@ un courant ∝ cos θ dans la bobine C et ∝ sin θ dans la bobine S.
 
 ## Démo
 
-[▶ Voir la vidéo de l'aiguille en fonctionnement](compteur.mp4)
+https://github.com/user-attachments/assets/f71c3ea1-1e5e-48d8-9546-62c2b9e05537
 
 ## Câblage
 
