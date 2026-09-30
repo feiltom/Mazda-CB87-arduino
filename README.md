@@ -1,9 +1,6 @@
+# Jauge de compteur Mazda CB87 — Arduino Uno & ESPHome
 
-
-
-# Jauge de compteur Mazda CB87 — Arduino Uno
-
-Pilotage d'une aiguille de compteur voi directement par un Arduino Uno.
+Pilotage d'une aiguille de compteur de voiture directement par un Arduino Uno.
 
 Le moteur d'aiguille **n'est pas un moteur pas à pas** : c'est une jauge **air-core**
 (bobines croisées), bornes `C+ C- S+ S-` (Cosinus / Sinus), environ 205 Ω par bobine.
@@ -45,8 +42,57 @@ Commandes dans le moniteur :
 
 Fermer le moniteur (`Ctrl+C`) avant chaque téléversement.
 
-## Suite possible
+## ESPHome : composant `aircore_gauge`
 
-Passage sur ESP32-C3 SuperMini avec un module **DRV8833** (double pont en H,
-entrées compatibles 3,3 V) : AIN1/AIN2 → GPIO 4/5 (bobine C), BIN1/BIN2 → GPIO 6/7 (bobine S),
-VM sur 5 V, nSLEEP à l'état haut.
+Le dossier `components/aircore_gauge` est un composant externe ESPHome qui pilote
+les jauges air-core à partir de sorties PWM (`ledc` sur ESP32, en direct ou via un DRV8833).
+
+- jauges **4 fils** (`C+ C- S+ S-`) ou **3 fils** (`SIN COS COM`, commun tenu à mi-tension)
+- conversion valeur → angle (ex. 0–240 km/h → 0–270°), vitesse d'aiguille réglable
+- entité `number` pour Home Assistant, actions `aircore_gauge.set_value` / `set_angle`,
+  ou suivi automatique d'un capteur (`sensor:`)
+
+```yaml
+external_components:
+  - source: github://feiltom/Mazda-CB87-arduino@main
+    components: [aircore_gauge]
+
+output:
+  - { platform: ledc, id: cos_pos, pin: GPIO25, frequency: 25000Hz }
+  - { platform: ledc, id: cos_neg, pin: GPIO26, frequency: 25000Hz }
+  - { platform: ledc, id: sin_pos, pin: GPIO27, frequency: 25000Hz }
+  - { platform: ledc, id: sin_neg, pin: GPIO14, frequency: 25000Hz }
+
+aircore_gauge:
+  - id: speedo
+    cos_pos: cos_pos
+    cos_neg: cos_neg
+    sin_pos: sin_pos
+    sin_neg: sin_neg
+    zero_offset: -38
+    min_value: 0
+    max_value: 240
+    max_angle: 270
+
+number:
+  - platform: aircore_gauge
+    gauge_id: speedo
+    name: "Compteur"
+```
+
+Exemple complet : [`esphome/mazda-gauge.yaml`](esphome/mazda-gauge.yaml).
+
+| Option | Défaut | Rôle |
+|--------|--------|------|
+| `cos_pos` `cos_neg` `sin_pos` `sin_neg` | — | sorties d'une jauge 4 fils |
+| `cos` `sin` `common` | — | sorties d'une jauge 3 fils (à la place des 4 ci-dessus) |
+| `zero_offset` | `0` | décalage en degrés pour caler le 0 du cadran |
+| `max_power` | `80%` | PWM max, limite le courant dans les bobines |
+| `speed` | `180` | vitesse de l'aiguille en °/s (`0` = instantané) |
+| `min_value` / `max_value` | `0` / `100` | échelle de la valeur affichée |
+| `min_angle` / `max_angle` | `0` / `270` | angles correspondants sur le cadran |
+| `sensor` | — | capteur suivi automatiquement par l'aiguille |
+
+En direct sur un ESP32 (3,3 V), une bobine de 205 Ω consomme ~16 mA : pas besoin de driver,
+mais l'aiguille a un peu moins de couple qu'en 5 V. Pour du 5 V, intercaler un **DRV8833**
+(une bobine par pont en H, nSLEEP à l'état haut).

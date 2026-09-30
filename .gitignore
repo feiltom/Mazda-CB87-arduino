@@ -1,2 +1,5 @@
 .pio/
 .vscode/
+.esphome/
+secrets.yaml
+__pycache__/

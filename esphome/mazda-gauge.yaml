@@ -1,0 +1,66 @@
+# Jauge air-core du compteur Mazda CB87 pilotee par un ESP32 (DevKit)
+esphome:
+  name: mazda-gauge
+
+esp32:
+  board: esp32dev
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+
+ota:
+  - platform: esphome
+
+external_components:
+  - source: github://feiltom/Mazda-CB87-arduino@main
+    components: [aircore_gauge]
+
+# PWM a 25 kHz : pas de sifflement dans les bobines
+output:
+  - platform: ledc
+    id: cos_pos
+    pin: GPIO25
+    frequency: 25000Hz
+  - platform: ledc
+    id: cos_neg
+    pin: GPIO26
+    frequency: 25000Hz
+  - platform: ledc
+    id: sin_pos
+    pin: GPIO27
+    frequency: 25000Hz
+  - platform: ledc
+    id: sin_neg
+    pin: GPIO14
+    frequency: 25000Hz
+
+aircore_gauge:
+  - id: speedo
+    # jauge 4 fils : C+ C- S+ S-
+    cos_pos: cos_pos
+    cos_neg: cos_neg
+    sin_pos: sin_pos
+    sin_neg: sin_neg
+    # jauge 3 fils : remplacer les 4 lignes ci-dessus par
+    #   cos: sortie_cos
+    #   sin: sortie_sin
+    #   common: sortie_com
+    zero_offset: -38     # cale l'aiguille sur la graduation 0
+    max_power: 80%       # courant max dans les bobines
+    speed: 180           # vitesse de l'aiguille en deg/s
+    min_value: 0         # echelle affichee (ex: km/h)
+    max_value: 240
+    min_angle: 0         # angles correspondants sur le cadran
+    max_angle: 270
+
+# Curseur dans Home Assistant (echelle min_value..max_value de la jauge)
+number:
+  - platform: aircore_gauge
+    gauge_id: speedo
+    name: "Compteur"
+    unit_of_measurement: "km/h"
